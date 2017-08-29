@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: da808e1c7695bf64985ffae0ac70cf44
+timeCreated: 1502653347
+licenseType: Free
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - CTPlayerPrefab: {instanceID: 0}
+  - TPlayerPrefab: {instanceID: 0}
+  - WeaponFirePrefab: {instanceID: 0}
+  - NadePrefab: {instanceID: 0}
+  - NadeProjectilePrefab: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
