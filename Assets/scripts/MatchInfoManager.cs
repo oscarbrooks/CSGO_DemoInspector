@@ -2,17 +2,12 @@
 using System.Linq;
 using UnityEngine;
 
-public class MatchInfoManager : MonoBehaviour {
+public class MatchInfoManager : SingletonMonoBehaviour<MatchInfoManager> {
 
     public float Tickrate { get; private set; } = 64;
     public List<Round> Rounds { get; set; } = new List<Round>();
 
-    private GraphicsManager _graphicsManager;
-    private UIManager _uiManager;
-
     private void Start () {
-        _graphicsManager = GetComponent<GraphicsManager>();
-        _uiManager = GetComponent<UIManager>();
     }
 
     private void Update () {
@@ -22,7 +17,7 @@ public class MatchInfoManager : MonoBehaviour {
     public void SetTickrate(float tickrate)
     {
         Tickrate = tickrate;
-        _graphicsManager.Tickrate = Tickrate;
+        GraphicsManager.Instance.Tickrate = Tickrate;
     }
 
     public void AddRound(int number, int tick)
@@ -37,12 +32,12 @@ public class MatchInfoManager : MonoBehaviour {
 
         Rounds.Add(round);
 
-        _uiManager.RoundsBarUI.AddRound(round.Number);
+        UIManager.Instance.RoundsBarUI.AddRound(round.Number);
     }
 
     private void ClearRounds()
     {
         Rounds.Clear();
-        _uiManager.RoundsBarUI.ClearRounds();
+        UIManager.Instance.RoundsBarUI.ClearRounds();
     }
 }

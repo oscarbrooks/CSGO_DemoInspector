@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using DemoInfo;
 
-public class PlaybackManager : MonoBehaviour {
+public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
     public float TimeScale = 1;
 
     public List<Round> Rounds { get; set; } = new List<Round>();
@@ -12,8 +12,6 @@ public class PlaybackManager : MonoBehaviour {
     public List<WeaponFireFrame> WeaponFiredFrames { get; set; } = new List<WeaponFireFrame>();
     public List<NadeThrowFrame> NadeThrowFrames { get; set; } = new List<NadeThrowFrame>();
     public List<NadeProjectileFrame> NadeProjectileFrames { get; set; } = new List<NadeProjectileFrame>();
-
-    private GraphicsManager _graphicsManager;
 
     public bool IsPlaying { get; private set; } = false;
     public bool IsInitialized { get; private set; } = false;
@@ -36,8 +34,7 @@ public class PlaybackManager : MonoBehaviour {
     public void Initialize(float tickrate, PartialPlayer[] players)
     {
         _tickrate = tickrate;
-        _graphicsManager = GetComponent<GraphicsManager>();
-        _graphicsManager.CreatePlayers(players);
+        GraphicsManager.Instance.CreatePlayers(players);
         IsInitialized = true;
     }
 
@@ -65,7 +62,8 @@ public class PlaybackManager : MonoBehaviour {
             frame = new NadeThrowFrame()
             {
                 Tick = parser.CurrentTick,
-                Round = Rounds.Last().Number,
+                //Round = Rounds.Last().Number,
+                Round = MatchInfoManager.Instance.Rounds.Last().Number,
                 NadeThrows = new List<NadeThrow>()
                 {
                     nadeThrow
@@ -106,14 +104,15 @@ public class PlaybackManager : MonoBehaviour {
         if (!_isReady) return;
         var frames = Mathf.RoundToInt(seconds * _tickrate);
         currentFrame = Mathf.Clamp(currentFrame + frames, 0, Frames.Count - 1);
-        if (!IsPlaying) _graphicsManager.UpdatePlayers(Frames[currentFrame].Players);
+        if (!IsPlaying) GraphicsManager.Instance.UpdatePlayers(Frames[currentFrame].Players);
     }
 
     public void SkipToRound(int roundNumber)
     {
-        var round = Rounds.Find(r => r.Number == roundNumber);
+        //var round = Rounds.Find(r => r.Number == roundNumber);
+        var round = MatchInfoManager.Instance.Rounds.Find(r => r.Number == roundNumber);
         GoToTick(round.StartTick);
-        if (!IsPlaying) _graphicsManager.UpdatePlayers(Frames[currentFrame].Players);
+        if (!IsPlaying) GraphicsManager.Instance.UpdatePlayers(Frames[currentFrame].Players);
     }
 
     private void GoToTick(int tick)
@@ -129,7 +128,7 @@ public class PlaybackManager : MonoBehaviour {
         {
             if (currentFrame >= Frames.Count - 2) yield return new WaitForSeconds(1 / _tickrate);
             var frame = Frames[currentFrame];
-            _graphicsManager.UpdatePlayers(frame.Players);
+            GraphicsManager.Instance.UpdatePlayers(frame.Players);
 
             AlignFrames(frame.Tick);
             UpdateFrames(frame);
@@ -143,19 +142,19 @@ public class PlaybackManager : MonoBehaviour {
     {
         if (frame.Tick == WeaponFiredFrames[currentWeaponFrame].Tick)
         {
-            _graphicsManager.DisplayWeaponFireFrame(WeaponFiredFrames[currentWeaponFrame]);
+            GraphicsManager.Instance.DisplayWeaponFireFrame(WeaponFiredFrames[currentWeaponFrame]);
             currentWeaponFrame++;
         }
 
         if (frame.Tick == NadeThrowFrames[currentNadeFrame].Tick)
         {
-            _graphicsManager.DisplayNadeFrame(NadeThrowFrames[currentNadeFrame]);
+            GraphicsManager.Instance.DisplayNadeFrame(NadeThrowFrames[currentNadeFrame]);
             currentNadeFrame++;
         }
 
         if (frame.Tick == NadeProjectileFrames[currentNadeProjectileFrame].Tick)
         {
-            _graphicsManager.UpdateNadeProjectileFrame(NadeProjectileFrames[currentNadeProjectileFrame]);
+            GraphicsManager.Instance.UpdateNadeProjectileFrame(NadeProjectileFrames[currentNadeProjectileFrame]);
             currentNadeProjectileFrame++;
         }
     }

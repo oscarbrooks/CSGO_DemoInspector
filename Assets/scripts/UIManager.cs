@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class UIManager : MonoBehaviour {
+public class UIManager : SingletonMonoBehaviour<UIManager> {
 
     public ProgressLoaderUI ParsingProgressLoaderUI { get; private set; }
     public RoundsBarUI RoundsBarUI { get; private set; }

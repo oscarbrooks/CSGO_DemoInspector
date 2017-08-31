@@ -6,18 +6,9 @@ using UnityEngine;
 public class EventsHandler {
     private Parser _parser;
 
-    private PlaybackManager _playbackManager;
-    private GraphicsManager _graphicsManager;
-    private UIManager _uiManager;
-    private MatchInfoManager _matchInfoManager;
-
     public EventsHandler(Parser parser)
     {
         _parser = parser;
-        _playbackManager = _parser.GetComponent<PlaybackManager>();
-        _graphicsManager = _parser.GetComponent<GraphicsManager>();
-        _uiManager = _parser.GetComponent<UIManager>();
-        _matchInfoManager = _parser.GetComponent<MatchInfoManager>();
     }
 
     public void OnHeaderParsed(object sender, object e)
@@ -25,18 +16,20 @@ public class EventsHandler {
         var eventArgs = (HeaderParsedEventArgs)e;
         var parser = (DemoParser)sender;
 
-        _matchInfoManager.SetTickrate(parser.TickRate);
+        MatchInfoManager.Instance.SetTickrate(parser.TickRate);
 
-        _matchInfoManager.AddRound(parser.CTScore + parser.TScore + 1, parser.CurrentTick);
+        MatchInfoManager.Instance.AddRound(parser.CTScore + parser.TScore + 1, parser.CurrentTick);
 
-        _graphicsManager.SetMapRadar(eventArgs.Header.MapName);
+        Debug.Log(eventArgs.Header.MapName);
+
+        GraphicsManager.Instance.SetMapRadar(eventArgs.Header.MapName);
     }
 
     public void OnRoundEnd(object sender, object e)
     {
         var parser = (DemoParser)sender;
         var roundNumber = parser.CTScore + parser.TScore;
-        _uiManager.ParsingProgressLoaderUI.UpdateInfo($"{roundNumber} rounds");
+        UIManager.Instance.ParsingProgressLoaderUI.UpdateInfo($"{roundNumber} rounds");
     }
 
     public void OnRoundStart(object sender, object e)
@@ -45,21 +38,14 @@ public class EventsHandler {
         var parser = (DemoParser)sender;
         var roundNumber = parser.CTScore + parser.TScore + 1;
 
-        _matchInfoManager.AddRound(roundNumber, parser.CurrentTick);
+        MatchInfoManager.Instance.AddRound(roundNumber, parser.CurrentTick);
 
-        _playbackManager.Rounds.Add(new Round(roundNumber, parser.CurrentTick));
+        PlaybackManager.Instance.Rounds.Add(new Round(roundNumber, parser.CurrentTick));
 
-        if (!_playbackManager.IsInitialized) {
+        if (!PlaybackManager.Instance.IsInitialized) {
             var players = parser.PlayingParticipants.Select(p => new PartialPlayer(p)).ToArray();
-            _playbackManager.Initialize(parser.TickRate, players);
+            PlaybackManager.Instance.Initialize(parser.TickRate, players);
         }
-    }
-
-    public void OnGameEnd(object sender, object p)
-    {
-        var players = (PartialPlayer[])p;
-        var parser = (DemoParser)sender;
-        //_playbackManager.Initialize(parser.TickRate, players);
     }
 
     public void OnTickDone(object sender, object e)
@@ -78,7 +64,7 @@ public class EventsHandler {
             Tick = parser.CurrentTick,
             Players = players
         };
-        _playbackManager.Frames.Add(frame);
+        PlaybackManager.Instance.Frames.Add(frame);
 
         if (parser.Nades.Count != 0)
         {
@@ -91,7 +77,7 @@ public class EventsHandler {
                 Tick = parser.CurrentTick,
                 NadeProjectiles = nades
             };
-            _playbackManager.AddNadeProjectileFrame(nadeProjectileFrame);
+            PlaybackManager.Instance.AddNadeProjectileFrame(nadeProjectileFrame);
         }
 
     }
@@ -102,7 +88,7 @@ public class EventsHandler {
         var eventArgs = (WeaponFiredEventArgs)e;
         var parser = (DemoParser)sender;
 
-        if (_playbackManager.AddNadeFrame(parser, eventArgs)) return;
+        if (PlaybackManager.Instance.AddNadeFrame(parser, eventArgs)) return;
 
         var shooter = eventArgs.Shooter;
         var weaponFire = new WeaponFire()
@@ -115,7 +101,7 @@ public class EventsHandler {
         };
 
         WeaponFireFrame frame = null;
-        if (_playbackManager.WeaponFiredFrames.Any()) frame = _playbackManager.WeaponFiredFrames.Last();
+        if (PlaybackManager.Instance.WeaponFiredFrames.Any()) frame = PlaybackManager.Instance.WeaponFiredFrames.Last();
 
         if (frame == null || frame.Tick != parser.CurrentTick)
         {
@@ -127,7 +113,7 @@ public class EventsHandler {
                     weaponFire
                 }
             };
-            _playbackManager.WeaponFiredFrames.Add(frame);
+            PlaybackManager.Instance.WeaponFiredFrames.Add(frame);
         }
         else
         {

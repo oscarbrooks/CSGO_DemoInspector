@@ -2,10 +2,7 @@
 
 public class GameController : MonoBehaviour {
 
-    private PlaybackManager _playbackManager;
-
 	void Start () {
-        //_playbackManager = GetComponent<PlaybackManager>();
 	}
 	
 	void Update () {

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class GraphicsManager : MonoBehaviour {
+public class GraphicsManager : SingletonMonoBehaviour<GraphicsManager> {
 
     public GameObject CTPlayerPrefab;
     public GameObject TPlayerPrefab;
@@ -15,6 +15,7 @@ public class GraphicsManager : MonoBehaviour {
     public float Tickrate { get; set; } = 64;
 
     private const int _playbackScale = 35;
+    private Map _map;
 
     private Dictionary<string, PlayerGraphics> _players = new Dictionary<string, PlayerGraphics>();
     private Dictionary<Guid, NadeProjectileGraphics> _nadeProjectiles = new Dictionary<Guid, NadeProjectileGraphics>();
@@ -31,11 +32,10 @@ public class GraphicsManager : MonoBehaviour {
     {
         var mapOverviews = GameObject.Find("GameContent").GetComponent<MapOverviews>();
         if (mapOverviews.UseSimpleRadar) name += "_sr";
-        var map = mapOverviews.Maps.First(m => m.Name == name);
+        _map = mapOverviews.Maps.First(m => m.Name == name);
         var mapPlane = GameObject.Find("MapOverviewRadar");
-        mapPlane.GetComponent<Renderer>().material.mainTexture = map.Texture;
-        mapPlane.transform.position = map.Offset;
-        mapPlane.transform.localScale = map.Scale;
+        mapPlane.GetComponent<Renderer>().material.mainTexture = _map.Texture;
+        mapPlane.transform.localScale = _map.Scale;
     }
 
     public void CreatePlayers(PartialPlayer[] players)
@@ -65,7 +65,7 @@ public class GraphicsManager : MonoBehaviour {
             {
                 if (!playerGraphics.IsAlive(player.IsAlive)) continue;
                 var pos = new Vector3(player.Position.x, player.Position.y, player.Position.z) / _playbackScale;
-                playerGraphics.UpdatePosition(pos);
+                playerGraphics.UpdatePosition(pos - _map.Offset);
                 playerGraphics.UpdateViewAngle(player.ViewX, player.ViewY);
             }
         }
@@ -79,7 +79,7 @@ public class GraphicsManager : MonoBehaviour {
             var weaponFireClone = Instantiate(WeaponFirePrefab);
             var weaponGraphics = weaponFireClone.GetComponent<WeaponFireGraphics>();
             weaponGraphics.Direction = DemoInfoHelper.ViewAnglesToVector3(weaponFire.ViewX, weaponFire.ViewY);
-            var pos = weaponFire.ShooterPosition / _playbackScale;
+            var pos = (weaponFire.ShooterPosition / _playbackScale) - _map.Offset;
             pos.y = 1.7f;
             weaponFireClone.transform.position = pos;
             Destroy(weaponFireClone, 1);
@@ -115,7 +115,7 @@ public class GraphicsManager : MonoBehaviour {
             else
             {
                 var pos = DemoInfoHelper.SourceToUnityVector(nade.GetPos()) / _playbackScale;
-                var offset = new Vector3(0, -pos.y, 0);
+                var offset = new Vector3(0, -pos.y, 0) - _map.Offset;
                 var nadeProjectileClone = Instantiate(NadeProjectilePrefab);
                 nadeProjectileClone.transform.position = pos + offset;
                 var nadeGraphics = nadeProjectileClone.GetComponent<NadeProjectileGraphics>();

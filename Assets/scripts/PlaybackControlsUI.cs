@@ -4,12 +4,10 @@ using UnityEngine.UI;
 public class PlaybackControlsUI : MonoBehaviour {
 
     private PlayButton _playButton { get; set;}
-    private PlaybackManager _playbackManager { get; set; }
 
 	void Start () {
         _playButton = new PlayButton(transform);
-        _playbackManager = GameObject.Find("SceneManager").GetComponent<PlaybackManager>();
-        ToggleUIPlayPause(_playbackManager.IsPlaying);
+        ToggleUIPlayPause(PlaybackManager.Instance.IsPlaying);
 	}
 	
 	void Update () {
@@ -18,13 +16,13 @@ public class PlaybackControlsUI : MonoBehaviour {
 
     public void TogglePlayPause()
     {
-        _playbackManager.TogglePlayPause();
-        ToggleUIPlayPause(_playbackManager.IsPlaying);
+        PlaybackManager.Instance.TogglePlayPause();
+        ToggleUIPlayPause(PlaybackManager.Instance.IsPlaying);
     }
 
     public void SkipForwardBackward(int seconds)
     {
-        _playbackManager.Skip(seconds);
+        PlaybackManager.Instance.Skip(seconds);
     }
 
     private void ToggleUIPlayPause(bool isPlaying)

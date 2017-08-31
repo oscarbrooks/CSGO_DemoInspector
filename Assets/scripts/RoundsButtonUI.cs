@@ -4,10 +4,7 @@ using UnityEngine.UI;
 public class RoundsButtonUI : MonoBehaviour {
     public int RoundNumber { get; set; }
 
-    private PlaybackManager _playbackManager;
-
 	void Start () {
-        _playbackManager = GameObject.Find("SceneManager").GetComponent<PlaybackManager>();
 	}
 	
 	void Update () {
@@ -16,6 +13,6 @@ public class RoundsButtonUI : MonoBehaviour {
 
     public void GoToRound()
     {
-        _playbackManager.SkipToRound(RoundNumber);
+        PlaybackManager.Instance.SkipToRound(RoundNumber);
     }
 }
