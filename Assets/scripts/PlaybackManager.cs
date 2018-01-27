@@ -12,6 +12,7 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
     public List<WeaponFireFrame> WeaponFiredFrames { get; set; } = new List<WeaponFireFrame>();
     public List<NadeThrowFrame> NadeThrowFrames { get; set; } = new List<NadeThrowFrame>();
     public List<NadeProjectileFrame> NadeProjectileFrames { get; set; } = new List<NadeProjectileFrame>();
+    public List<PlayerHurtFrame> PlayerHurtFrames { get; set; } = new List<PlayerHurtFrame>();
 
     public bool IsPlaying { get; private set; } = false;
     public bool IsInitialized { get; private set; } = false;
@@ -22,6 +23,7 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
     private int currentWeaponFrame = 0;
     private int currentNadeFrame = 0;
     private int currentNadeProjectileFrame = 0;
+    private int currentPlayerHurtFrame = 0;
 
     void Start () {
 		
@@ -34,7 +36,9 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
     public void Initialize(float tickrate, PartialPlayer[] players)
     {
         _tickrate = tickrate;
-        GraphicsManager.Instance.CreatePlayers(players);
+
+        PlayersManager.Instance.CreatePlayers(players);
+
         IsInitialized = true;
     }
 
@@ -62,7 +66,6 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
             frame = new NadeThrowFrame()
             {
                 Tick = parser.CurrentTick,
-                //Round = Rounds.Last().Number,
                 Round = MatchInfoManager.Instance.Rounds.Last().Number,
                 NadeThrows = new List<NadeThrow>()
                 {
@@ -104,15 +107,14 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
         if (!_isReady) return;
         var frames = Mathf.RoundToInt(seconds * _tickrate);
         currentFrame = Mathf.Clamp(currentFrame + frames, 0, Frames.Count - 1);
-        if (!IsPlaying) GraphicsManager.Instance.UpdatePlayers(Frames[currentFrame].Players);
+        if (!IsPlaying) PlayersManager.Instance.UpdatePlayers(Frames[currentFrame].Players);
     }
 
     public void SkipToRound(int roundNumber)
     {
-        //var round = Rounds.Find(r => r.Number == roundNumber);
         var round = MatchInfoManager.Instance.Rounds.Find(r => r.Number == roundNumber);
         GoToTick(round.StartTick);
-        if (!IsPlaying) GraphicsManager.Instance.UpdatePlayers(Frames[currentFrame].Players);
+        if (!IsPlaying) PlayersManager.Instance.UpdatePlayers(Frames[currentFrame].Players);
     }
 
     private void GoToTick(int tick)
@@ -127,13 +129,17 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
         while (true)
         {
             if (currentFrame >= Frames.Count - 2) yield return new WaitForSeconds(1 / _tickrate);
+
             var frame = Frames[currentFrame];
-            GraphicsManager.Instance.UpdatePlayers(frame.Players);
+
+            PlayersManager.Instance.UpdatePlayers(frame.Players);
 
             AlignFrames(frame.Tick);
+
             UpdateFrames(frame);
 
             currentFrame++;
+
             yield return new WaitForSeconds((1 / _tickrate) * TimeScale);
         }
     }
@@ -157,6 +163,13 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
             GraphicsManager.Instance.UpdateNadeProjectileFrame(NadeProjectileFrames[currentNadeProjectileFrame]);
             currentNadeProjectileFrame++;
         }
+
+
+        if (frame.Tick == PlayerHurtFrames[currentPlayerHurtFrame].Tick)
+        {
+            GraphicsManager.Instance.DisplayPlayerHurtFrame(PlayerHurtFrames[currentPlayerHurtFrame]);
+            currentPlayerHurtFrame++;
+        }
     }
 
     private void AlignFrames(int currentTick)
@@ -164,18 +177,21 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
         AlignFrame(currentTick, WeaponFiredFrames, ref currentWeaponFrame);
         AlignFrame(currentTick, NadeThrowFrames, ref currentNadeFrame);
         AlignFrame(currentTick, NadeProjectileFrames, ref currentNadeProjectileFrame);
+        AlignFrame(currentTick, PlayerHurtFrames, ref currentPlayerHurtFrame);
     }
 
     private void AlignFrame<T>(int currentTick, List<T> frames, ref int currentFrameIndex) where T : IFrame
     {
         var frame = frames[currentFrameIndex];
-        while (frame.Tick < currentTick)
-        {
-            frame = frames[currentFrameIndex++];
-        }
+
         while (frame.Tick > currentTick && currentFrameIndex > 0)
         {
-            frame = frames[currentFrameIndex--];
+            frame = frames[--currentFrameIndex];
+        }
+
+        while (frame.Tick < currentTick)
+        {
+            frame = frames[++currentFrameIndex];
         }
     }
 

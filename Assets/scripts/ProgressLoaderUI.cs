@@ -12,7 +12,7 @@ public class ProgressLoaderUI : MonoBehaviour {
 	void Start () {
         _progressInner = transform.Find("Progress").gameObject;
         _progressImage = _progressInner.GetComponent<Image>();
-        _text = transform.Find("FrontCircle").GetComponentInChildren<Text>();
+        _text = transform.Find("ParsingText").GetComponentInChildren<Text>();
 
     }
 	
@@ -22,7 +22,10 @@ public class ProgressLoaderUI : MonoBehaviour {
 
     public void UpdateProgress(float progress)
     {
+        if (_progressImage == null) return;
+
         _progressImage.fillAmount = progress;
+
         UpdateText();
     }
 
@@ -33,9 +36,9 @@ public class ProgressLoaderUI : MonoBehaviour {
 
     public void UpdateText()
     {
-        var progress = string.Format("{0:0.0}", _progressImage.fillAmount * 100);
-        var text = $"Loading... {progress}%\n";
-        text += _info;
+        var progress = string.Format("{0:0}", _progressImage.fillAmount * 100);
+        var text = $"{progress}%";
+        //text += _info;
         _text.text = text;
     }
 

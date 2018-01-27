@@ -32,6 +32,12 @@ public class NadeProjectileFrame : IFrame
     public List<NadeProjectile> NadeProjectiles { get; set; }
 }
 
+public class PlayerHurtFrame : IFrame
+{
+    public int Tick { get; set; }
+    public List<PlayerHurt> PlayerHurts { get; set; }
+}
+
 public struct WeaponFire
 {
     public string ShooterSteamID { get; set; }
@@ -39,6 +45,15 @@ public struct WeaponFire
     public Vector3 ShooterPosition { get; set; }
     public float ViewX { get; set; }
     public float ViewY { get; set; }
+}
+
+public struct PlayerHurt
+{
+    public PartialPlayer Victim { get; set; }
+    public PartialPlayer Attacker { get; set; }
+    public PartialWeapon Weapon { get; set; }
+    public Hitgroup HitGroup { get; set; }
+    public bool IsFallDamage { get; set; }
 }
 
 public struct NadeThrow

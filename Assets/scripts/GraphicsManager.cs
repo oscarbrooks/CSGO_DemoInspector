@@ -1,24 +1,23 @@
-﻿using DemoInfo;
-using System;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 public class GraphicsManager : SingletonMonoBehaviour<GraphicsManager> {
 
-    public GameObject CTPlayerPrefab;
-    public GameObject TPlayerPrefab;
-    public GameObject WeaponFirePrefab;
     public GameObject NadePrefab;
-    public GameObject NadeProjectilePrefab;
 
+    public Map Map;
     public float Tickrate { get; set; } = 64;
+    public const int PlaybackScale = 35;
 
-    private const int _playbackScale = 35;
-    private Map _map;
+    private GameObject MapPlane { get; set; }
+    private GameObject Map3DLevel { get; set; }
+    public PlaybackMode PlaybackMode { get; set; } = PlaybackMode.TwoD;
 
-    private Dictionary<string, PlayerGraphics> _players = new Dictionary<string, PlayerGraphics>();
-    private Dictionary<Guid, NadeProjectileGraphics> _nadeProjectiles = new Dictionary<Guid, NadeProjectileGraphics>();
+    private Vector3 _originalScale3D;
+    private Vector3 _originalScale2D;
 
     void Start () {
 		
@@ -31,44 +30,82 @@ public class GraphicsManager : SingletonMonoBehaviour<GraphicsManager> {
     public void SetMapRadar(string name)
     {
         var mapOverviews = GameObject.Find("GameContent").GetComponent<MapOverviews>();
+
         if (mapOverviews.UseSimpleRadar) name += "_sr";
-        _map = mapOverviews.Maps.First(m => m.Name == name);
-        var mapPlane = GameObject.Find("MapOverviewRadar");
-        mapPlane.GetComponent<Renderer>().material.mainTexture = _map.Texture;
-        mapPlane.transform.localScale = _map.Scale;
+
+        Map = mapOverviews.Maps.First(m => m.Name == name);
+
+        MapPlane = GameObject.Find("MapOverviewRadar");
+        MapPlane.GetComponent<Renderer>().material.mainTexture = Map.Texture;
+        MapPlane.transform.localScale = _originalScale2D = Map.Scale;
+
+        Map3DLevel = Instantiate(Map.Layout3D);
+        _originalScale3D = Map3DLevel.transform.localScale;
+
+        SwitchToPlaybackMode(PlaybackMode.TwoD);
     }
 
-    public void CreatePlayers(PartialPlayer[] players)
+    public void SwitchToPlaybackMode(PlaybackMode playbackMode)
     {
-        for (int i = 0; i < players.Length; i++)
+        PlaybackMode = playbackMode;
+
+        if (PlaybackMode == PlaybackMode.ThreeD)
         {
-            var player = players[i];
+            Map3DLevel.SetActive(true);
 
-            GameObject playerClone;
-            if (player.Team == Team.CounterTerrorist) playerClone = Instantiate(CTPlayerPrefab);
-            else playerClone = Instantiate(TPlayerPrefab);
+            Map3DLevel.transform.localScale = ScaleZeroHeight(_originalScale3D);
 
-            playerClone.name = player.SteamID;
-            var playerGraphics = playerClone.GetComponent<PlayerGraphics>();
-            playerGraphics.Tickrate = Tickrate;
-            _players.Add(player.SteamID.ToString(), playerGraphics);
+            var animation3D = AnimateScale(Map3DLevel, _originalScale3D, 0.2f);
+            StartCoroutine(animation3D);
+
+            var animation2D = AnimateScale(MapPlane, Vector3.zero, 0.2f, () => {
+                MapPlane.transform.localScale = _originalScale2D;
+                MapPlane.SetActive(false);
+            });
+
+            StartCoroutine(animation2D);
         }
-    }
-
-    public void UpdatePlayers(PartialPlayer[] players)
-    {
-        for (int i = 0; i < players.Length; i++)
+        else
         {
-            var player = players[i];
-            PlayerGraphics playerGraphics;
-            if(_players.TryGetValue(player.SteamID.ToString(), out playerGraphics))
+            var animation3D = AnimateScale(Map3DLevel, ScaleZeroHeight(_originalScale3D), 0.2f, () =>
             {
-                if (!playerGraphics.IsAlive(player.IsAlive)) continue;
-                var pos = new Vector3(player.Position.x, player.Position.y, player.Position.z) / _playbackScale;
-                playerGraphics.UpdatePosition(pos - _map.Offset);
-                playerGraphics.UpdateViewAngle(player.ViewX, player.ViewY);
-            }
+                Map3DLevel.transform.localScale = _originalScale3D;
+                Map3DLevel.SetActive(false);
+            });
+
+            MapPlane.transform.localScale = Vector3.zero;
+
+            MapPlane.SetActive(true);
+
+            var animation2D = AnimateScale(MapPlane, _originalScale2D, 0.2f);
+
+
+            StartCoroutine(animation3D);
+            StartCoroutine(animation2D);
         }
+    }
+
+    private IEnumerator AnimateScale(GameObject obj, Vector3 targetScale, float seconds, Action callback = null)
+    {
+        var elapsedTime = 0.0f;
+        var startScale = obj.transform.localScale;
+
+        while (elapsedTime < seconds)
+        {
+            obj.transform.localScale = Vector3.Lerp(startScale, targetScale, (elapsedTime / seconds));
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        obj.transform.localScale = targetScale;
+
+        callback?.Invoke();
+    }
+
+    private Vector3 ScaleZeroHeight(Vector3 originalScale)
+    {
+        return new Vector3(originalScale.x, 0, originalScale.z);
     }
 
     public void DisplayWeaponFireFrame(WeaponFireFrame frame)
@@ -76,14 +113,14 @@ public class GraphicsManager : SingletonMonoBehaviour<GraphicsManager> {
         for (int i = 0; i < frame.WeaponFires.Count; i++)
         {
             var weaponFire = frame.WeaponFires[i];
-            var weaponFireClone = Instantiate(WeaponFirePrefab);
-            var weaponGraphics = weaponFireClone.GetComponent<WeaponFireGraphics>();
-            weaponGraphics.Direction = DemoInfoHelper.ViewAnglesToVector3(weaponFire.ViewX, weaponFire.ViewY);
-            var pos = (weaponFire.ShooterPosition / _playbackScale) - _map.Offset;
-            pos.y = 1.7f;
-            weaponFireClone.transform.position = pos;
-            Destroy(weaponFireClone, 1);
+            var position = (weaponFire.ShooterPosition / PlaybackScale) - Map.Offset;
+            WeaponGraphicsManager.Instance.CreateWeaponFireGraphics(weaponFire, position, PlaybackMode);
         }
+    }
+
+    public void DisplayPlayerHurtFrame(PlayerHurtFrame frame)
+    {
+        PlayerHurtGraphicsManager.Instance.UpdatePlayerHurtFrame(frame, PlaybackScale, Map.Offset);
     }
 
     public void DisplayNadeFrame(NadeThrowFrame frame)
@@ -93,8 +130,8 @@ public class GraphicsManager : SingletonMonoBehaviour<GraphicsManager> {
             var nadeThrow = frame.NadeThrows[i];
             var nadeClone = Instantiate(NadePrefab);
             nadeClone.GetComponent<NadeGraphics>().NadeThrow = nadeThrow;
-            var pos = nadeThrow.Position / _playbackScale;
-            pos.y = 3;
+            var pos = (nadeThrow.Position / PlaybackScale) - Map.Offset;
+            if (PlaybackMode == PlaybackMode.TwoD) pos.y = 3;
             nadeClone.transform.position = pos;
             nadeClone.name = nadeThrow.NadeType.ToString() + " - " + nadeThrow.Thrower;
 
@@ -104,35 +141,7 @@ public class GraphicsManager : SingletonMonoBehaviour<GraphicsManager> {
 
     public void UpdateNadeProjectileFrame(NadeProjectileFrame frame)
     {
-        var leftOverGuids = _nadeProjectiles.Keys.ToList();
-        for (int i = 0; i < frame.NadeProjectiles.Count; i++)
-        {
-            var nade = frame.NadeProjectiles[i];
-            if (leftOverGuids.Contains(nade.Guid))
-            {
-                leftOverGuids.Remove(nade.Guid);
-            }
-            else
-            {
-                var pos = DemoInfoHelper.SourceToUnityVector(nade.GetPos()) / _playbackScale;
-                var offset = new Vector3(0, -pos.y, 0) - _map.Offset;
-                var nadeProjectileClone = Instantiate(NadeProjectilePrefab);
-                nadeProjectileClone.transform.position = pos + offset;
-                var nadeGraphics = nadeProjectileClone.GetComponent<NadeProjectileGraphics>();
-                nadeGraphics.Offset = offset;
-                nadeGraphics.Tickrate = Tickrate;
-                _nadeProjectiles.Add(nade.Guid, nadeGraphics);
-            }
-            _nadeProjectiles[nade.Guid].UpdatePosition(DemoInfoHelper.SourceToUnityVector(nade.GetPos()) / _playbackScale);
-        }
-
-        foreach (Guid guid in leftOverGuids)
-        {
-            var nadeGraphics = _nadeProjectiles[guid];
-            _nadeProjectiles.Remove(guid);
-            Destroy(nadeGraphics.gameObject);
-        }
-
+        NadeGraphicsManager.Instance.UpdateNadeProjectileFrame(frame, Map);
     }
 
 }

@@ -11,12 +11,4 @@ public class SingletonMonoBehaviour<T> : MonoBehaviour where T : class {
         else if (Instance != this as T)
             Destroy(gameObject);
     }
-
-    void Start () {
-		
-	}
-	
-	void Update () {
-		
-	}
 }

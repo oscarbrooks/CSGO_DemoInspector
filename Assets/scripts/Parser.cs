@@ -7,16 +7,21 @@ using System;
 using System.Collections.Generic;
 
 public class Parser : SingletonMonoBehaviour<Parser> {
+    
+    public float Progress;
+    public bool MatchStarted = false;
 
+    private bool _parsingFinished;
+    private Image _progressImage;
     private EventsHandler _eventsHandler;
     private Queue<ParserEvent<object>> _parsingEventsQueue = new Queue<ParserEvent<object>>();
 
-    private Image _progressImage;
-    public float Progress;
-    public bool MatchStarted = false;
-    private bool _parsingFinished;
+    private void Start()
+    {
+        ParseFile();
+    }
 
-    void Update () {
+    private void Update () {
         if (_parsingEventsQueue.Count > 0)
         {
             for (int i = 0; i < _parsingEventsQueue.Count; i++)
@@ -25,17 +30,20 @@ public class Parser : SingletonMonoBehaviour<Parser> {
                 parsingEvent.Action.Invoke(parsingEvent.Sender, parsingEvent.EventArgs);
             }
         }
+        
 
-        if (!_parsingFinished) UIManager.Instance.ParsingProgressLoaderUI.UpdateProgress(Progress);
+        if (!_parsingFinished) UIManager.Instance.ParsingProgressLoaderUI?.UpdateProgress(Progress);
     }
 
-    public void ParseFile (string filePath) {
+    public void ParseFile () {
+
+        if (!File.Exists(GameManager.Instance.CurrentFile)) return;
 
         _eventsHandler = new EventsHandler(this);
 
-        if (!File.Exists(filePath)) return;
+        UIManager.Instance.StartParsing();
 
-        var parsingThread = new Thread(new ThreadStart(() => StartParseThread(filePath)));
+        var parsingThread = new Thread(new ThreadStart(() => StartParseThread(GameManager.Instance.CurrentFile)));
 
         try
         {
@@ -59,6 +67,7 @@ public class Parser : SingletonMonoBehaviour<Parser> {
                 parser.RoundStart += (s, e) => _parsingEventsQueue.Enqueue(new ParserEvent<object>(_eventsHandler.OnRoundStart, s, e));
                 parser.MatchStarted += (s, e) => MatchStarted = true;
                 parser.WeaponFired += _eventsHandler.OnWeaponFired;
+                parser.PlayerHurt += _eventsHandler.OnPlayerHurt;
                 parser.TickDone += _eventsHandler.OnTickDone;
                 parser.ParseHeader();
                 parser.ParseToEnd();
@@ -74,7 +83,8 @@ public class Parser : SingletonMonoBehaviour<Parser> {
     {
         _parsingFinished = true;
         _parsingEventsQueue.Enqueue(new ParserEvent<object>((s, e) => UIManager.Instance.ParsingProgressLoaderUI.OnProgressComplete(), new { }, new { }));
-        _parsingEventsQueue.Enqueue(new ParserEvent<object>((s, e) => GraphicsManager.Instance.UpdatePlayers(PlaybackManager.Instance.Frames[0].Players), new { }, new { }));
+        _parsingEventsQueue.Enqueue(new ParserEvent<object>((s, e) => PlayersManager.Instance.UpdatePlayers(PlaybackManager.Instance.Frames[0].Players), new { }, new { }));
+        _parsingEventsQueue.Enqueue(new ParserEvent<object>((s, e) => UIManager.Instance.OnParsingComplete(), new { }, new { }));
         PlaybackManager.Instance.OnParsingComplete();
     }
 }

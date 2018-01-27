@@ -118,7 +118,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4338456885819658}
   - component: {fileID: 136658658377451354}
-  - component: {fileID: 114915772717544228}
+  - component: {fileID: 114514762003479558}
   m_Layer: 0
   m_Name: OverpassT
   m_TagString: Untagged
@@ -408,7 +408,7 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1567755846491418}
   m_Mesh: {fileID: 4300002, guid: 48beefe236887944987a82e89796368d, type: 3}
---- !u!114 &114915772717544228
+--- !u!114 &114514762003479558
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -416,9 +416,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1883094453153288}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 18835135d78d4f444a67bce3c0ea060f, type: 3}
+  m_Script: {fileID: 11500000, guid: 2ecb3fd1436540348a65b92305205be7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Head: {fileID: 4202335167839802}
 --- !u!136 &136658658377451354
 CapsuleCollider:
   m_ObjectHideFlags: 1
