@@ -1,6 +1,7 @@
-﻿public struct Round {
-    public int Number { get; set; }
-    public int StartTick { get; set; }
+﻿[System.Serializable]
+public struct Round {
+    public int Number;
+    public int StartTick;
 
     public Round(int number, int startTick)
     {

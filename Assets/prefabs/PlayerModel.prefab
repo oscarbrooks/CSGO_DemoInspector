@@ -52,9 +52,7 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4263429673110734}
-  - component: {fileID: 33075783980983842}
   - component: {fileID: 136310855196783446}
-  - component: {fileID: 23894216449630646}
   - component: {fileID: 114075745615813738}
   m_Layer: 0
   m_Name: PlayerModel
@@ -136,45 +134,6 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
---- !u!23 &23894216449630646
-MeshRenderer:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1923595394202316}
-  m_Enabled: 0
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_PreserveUVs: 1
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
---- !u!33 &33075783980983842
-MeshFilter:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1923595394202316}
-  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!102 &102279386430232804
 TextMesh:
   serializedVersion: 3
@@ -207,6 +166,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 18835135d78d4f444a67bce3c0ea060f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  TargetViewDirection: {x: 0, y: 0, z: 0}
   NameTag: {fileID: 4651443646428784}
   WeaponHolder: {fileID: 0}
 --- !u!114 &114402681185022678

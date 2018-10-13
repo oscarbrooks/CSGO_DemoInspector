@@ -1,14 +1,19 @@
 ﻿using DemoInfo;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class EventsHandler {
+public class EseaEventsHandler : IDemoEventHandler {
     private Parser _parser;
+    private const float _tickrate = 128;
 
-    public EventsHandler(Parser parser)
+    private ValveDemoEventsHandler _defaultEventsHandler;
+
+    public EseaEventsHandler(Parser parser)
     {
         _parser = parser;
+        _defaultEventsHandler = new ValveDemoEventsHandler(_parser);
     }
 
     public void OnHeaderParsed(object sender, object e)
@@ -16,7 +21,7 @@ public class EventsHandler {
         var eventArgs = (HeaderParsedEventArgs)e;
         var parser = (DemoParser)sender;
 
-        MatchInfoManager.Instance.SetTickrate(parser.TickRate);
+        MatchInfoManager.Instance.SetTickrate(_tickrate);
 
         MatchInfoManager.Instance.AddRound(parser.CTScore + parser.TScore + 1, parser.CurrentTick);
 
@@ -28,8 +33,6 @@ public class EventsHandler {
         var parser = (DemoParser)sender;
 
         var roundNumber = parser.CTScore + parser.TScore;
-
-        UIManager.Instance.ParsingProgressLoaderUI.UpdateInfo($"{roundNumber} rounds");
     }
 
     public void OnRoundStart(object sender, object e)
@@ -44,17 +47,21 @@ public class EventsHandler {
 
         PlaybackManager.Instance.Rounds.Add(new Round(roundNumber, parser.CurrentTick));
 
-        if (!PlaybackManager.Instance.IsInitialized) {
+        if (!PlaybackManager.Instance.IsInitialized)
+        {
             var players = parser.PlayingParticipants.Select(p => new PartialPlayer(p)).ToArray();
-            PlaybackManager.Instance.Initialize(parser.TickRate, players);
+            PlaybackManager.Instance.Initialize(players);
         }
+    }
+
+    public void OnPlayerTeam(object sender, object ea)
+    {
+        _defaultEventsHandler.OnPlayerTeam(sender, ea);
     }
 
     public void OnTickDone(object sender, object e)
     {
         var parser = (DemoParser)sender;
-
-        _parser.Progress = parser.ParsingProgess;
 
         if (!_parser.MatchStarted) return;
 
@@ -67,6 +74,7 @@ public class EventsHandler {
             Tick = parser.CurrentTick,
             Players = players
         };
+
         PlaybackManager.Instance.Frames.Add(frame);
 
         if (parser.Nades.Count != 0)
@@ -81,7 +89,7 @@ public class EventsHandler {
                 NadeProjectiles = nades
             };
 
-            PlaybackManager.Instance.AddNadeProjectileFrame(nadeProjectileFrame);
+            NadePlaybackManager.Instance.AddNadeProjectileFrame(nadeProjectileFrame);
         }
 
     }
@@ -92,7 +100,7 @@ public class EventsHandler {
         var eventArgs = (WeaponFiredEventArgs)e;
         var parser = (DemoParser)sender;
 
-        if (PlaybackManager.Instance.AddNadeFrame(parser, eventArgs)) return;
+        if (NadePlaybackManager.Instance.AddNadeFrame(parser, eventArgs)) return;
 
         var shooter = eventArgs.Shooter;
 
@@ -164,5 +172,10 @@ public class EventsHandler {
         {
             frame.PlayerHurts.Add(playerHurt);
         }
+    }
+
+    public void OnSmokeNadeStarted(object sender, object ea)
+    {
+        _defaultEventsHandler.OnSmokeNadeStarted(sender, ea);
     }
 }

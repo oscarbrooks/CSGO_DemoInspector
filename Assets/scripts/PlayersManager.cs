@@ -1,6 +1,7 @@
 ﻿using DemoInfo;
 using System.Collections.Generic;
 using UnityEngine;
+using UI;
 
 public class PlayersManager : SingletonMonoBehaviour<PlayersManager> {
 
@@ -12,13 +13,21 @@ public class PlayersManager : SingletonMonoBehaviour<PlayersManager> {
 
     private Dictionary<string, PlayerGraphics> _players = new Dictionary<string, PlayerGraphics>();
 
-    void Start () {
+    [SerializeField]
+    private PlayerSideInfoController _playerSideInfoController;
+
+    private void Start () {
 		
 	}
 	
-	void Update () {
+	private void Update () {
 		
 	}
+
+    public void ResetSelf()
+    {
+        _players = new Dictionary<string, PlayerGraphics>();
+    }
 
     public PlayerGraphics GetBySteamId(string steamId)
     {
@@ -35,7 +44,11 @@ public class PlayersManager : SingletonMonoBehaviour<PlayersManager> {
         {
             var player = players[i];
 
+            if (_players.ContainsKey(player.SteamID.ToString())) continue;
+
             var playerGraphics = CreatePlayerGraphics(player);
+
+            _playerSideInfoController.AddPlayer(player);
 
             _players.Add(player.SteamID.ToString(), playerGraphics);
         }

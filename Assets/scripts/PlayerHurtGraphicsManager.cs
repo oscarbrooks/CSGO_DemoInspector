@@ -11,6 +11,8 @@ public class PlayerHurtGraphicsManager : SingletonMonoBehaviour<PlayerHurtGraphi
 		
 	}
 
+    public void ResetSelf() { }
+
     public void UpdatePlayerHurtFrame(PlayerHurtFrame frame, int playbackScale, Vector3 mapOffset)
     {
         for (int i = 0; i < frame.PlayerHurts.Count; i++)

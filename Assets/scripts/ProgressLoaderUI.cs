@@ -7,11 +7,10 @@ public class ProgressLoaderUI : MonoBehaviour {
     private GameObject _progressInner;
     private Text _text;
 
-    private string _info;
-
 	void Start () {
         _progressInner = transform.Find("Progress").gameObject;
         _progressImage = _progressInner.GetComponent<Image>();
+        _progressImage.fillAmount = 0;
         _text = transform.Find("ParsingText").GetComponentInChildren<Text>();
 
     }
@@ -27,11 +26,6 @@ public class ProgressLoaderUI : MonoBehaviour {
         _progressImage.fillAmount = progress;
 
         UpdateText();
-    }
-
-    public void UpdateInfo(string info)
-    {
-        _info = info;
     }
 
     public void UpdateText()

@@ -26,6 +26,13 @@ public class NadeThrowFrame : IFrame
     public List<NadeThrow> NadeThrows { get; set; }
 }
 
+public class NadeEffectFrame : IFrame
+{
+    public int Tick { get; set; }
+    public int Round { get; set; }
+    public List<NadeEffect> NadeEffects { get; set; }
+}
+
 public class NadeProjectileFrame : IFrame
 {
     public int Tick { get; set; }
@@ -62,4 +69,13 @@ public struct NadeThrow
     public EquipmentElement NadeType { get; set; }
     public Vector3 Position { get; set; }
     public Vector3 Direction { get; set; }
+}
+
+public struct NadeEffect
+{
+    public Guid Guid { get; set; }
+    public string Thrower { get; set; }
+    public EquipmentElement NadeType { get; set; }
+    public int Duration { get; set; }
+    public Vector3 Position { get; set; }
 }

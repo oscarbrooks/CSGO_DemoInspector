@@ -5,7 +5,7 @@ using UnityEngine;
 public class MatchInfoManager : SingletonMonoBehaviour<MatchInfoManager> {
 
     public float Tickrate { get; private set; } = 64;
-    public List<Round> Rounds { get; set; } = new List<Round>();
+    public List<Round> Rounds = new List<Round>();
 
     private void Start () {
     }
@@ -16,23 +16,26 @@ public class MatchInfoManager : SingletonMonoBehaviour<MatchInfoManager> {
 
     public void SetTickrate(float tickrate)
     {
-        Tickrate = tickrate;
+        Tickrate = Mathf.Round(tickrate);
         GraphicsManager.Instance.Tickrate = Tickrate;
     }
 
     public void AddRound(int number, int tick)
     {
-        var round = new Round()
+        var newRound = new Round()
         {
             Number = number,
             StartTick = tick
         };
 
-        if(number == 1 && Rounds.Any()) ClearRounds();
+        if(Rounds.Any() && newRound.Number == Rounds[0].Number) ClearRounds();
 
-        Rounds.Add(round);
+        if (!Rounds.Any(r => r.Number == number)) {
+            Rounds.Add(newRound);
+            UIManager.Instance.RoundsBarUI.AddRound(newRound.Number);
+        }
 
-        UIManager.Instance.RoundsBarUI.AddRound(round.Number);
+
     }
 
     private void ClearRounds()

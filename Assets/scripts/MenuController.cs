@@ -1,20 +1,26 @@
 ﻿using SFB;
+using System.IO;
+using System.Linq;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class MenuController : MonoBehaviour {
 
-	void Start () {
+    [SerializeField]
+    private DemoFilesUIController _demoFilesControllerUI;
+
+	private void Start () {
         Application.runInBackground = true;
+
+        InitialDisplayDemos();
     }
-	
-	void Update () {
+
+    private void Update () {
 		
 	}
 
-    public void LoadDemoSelection()
+    public void Exit()
     {
-        SceneManager.LoadScene("demo_selection");
+        Application.Quit();
     }
 
     public void OpenFileDialog()
@@ -23,10 +29,39 @@ public class MenuController : MonoBehaviour {
             new ExtensionFilter("Demo Files", "dem")
         };
 
-        var path = StandaloneFileBrowser.OpenFilePanel("Open File", "", extensions, false)[0];
+        var paths = StandaloneFileBrowser.OpenFilePanel("Open File", "", extensions, false);
 
-        GameManager.Instance.CurrentFile = path;
+        if (!paths.Any()) return;
 
-        SceneManager.LoadScene("demo_viewer");
+        GameManager.Instance.LoadDemo(paths[0]);
+    }
+
+    public void OpenFolderDialog()
+    {
+        var paths = StandaloneFileBrowser.OpenFolderPanel("Add CS:GO Demos Folder", "", false);
+
+        if (!paths.Any()) return;
+
+        AddDemoFolderPath(paths[0]);
+    }
+
+    private void InitialDisplayDemos()
+    {
+        var demoFolderPaths = SettingsManager.Instance.ApplicationData.DemoFolderPaths;
+
+        _demoFilesControllerUI.AddDemoFolders(demoFolderPaths);
+    }
+
+    public void AddDemoFolderPath(string folderPath)
+    {
+        if (!Directory.Exists(folderPath)) return;
+
+        if (SettingsManager.Instance.ApplicationData.DemoFolderPaths.Contains(folderPath)) return;
+
+        Debug.Log("Adding folder " + folderPath);
+
+        SettingsManager.Instance.ApplicationData.DemoFolderPaths.Add(folderPath);
+
+        SettingsManager.Instance.Save();
     }
 }

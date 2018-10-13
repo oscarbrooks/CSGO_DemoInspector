@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -10,34 +11,41 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
     public List<Round> Rounds { get; set; } = new List<Round>();
     public List<Frame> Frames { get; set; } = new List<Frame>();
     public List<WeaponFireFrame> WeaponFiredFrames { get; set; } = new List<WeaponFireFrame>();
-    public List<NadeThrowFrame> NadeThrowFrames { get; set; } = new List<NadeThrowFrame>();
-    public List<NadeProjectileFrame> NadeProjectileFrames { get; set; } = new List<NadeProjectileFrame>();
     public List<PlayerHurtFrame> PlayerHurtFrames { get; set; } = new List<PlayerHurtFrame>();
 
     public bool IsPlaying { get; private set; } = false;
     public bool IsInitialized { get; private set; } = false;
     private bool _isReady = false;
 
-    private float _tickrate = 32;
-    private int currentFrame = 0;
+    private float _tickrate = 128;
+    public int CurrentFrame = 0;
     private int currentWeaponFrame = 0;
     private int currentNadeFrame = 0;
+    private int currentNadeEffectFrame = 0;
     private int currentNadeProjectileFrame = 0;
     private int currentPlayerHurtFrame = 0;
+    
+    private int _framesToIterate = 0;
 
-    void Start () {
+    private CustomFixedUpdate _customFixedUpdate;
+
+    private void Start () {
 		
 	}
 	
-	void Update () {
-		
+	private void Update () {
+        if (!IsInitialized || !IsPlaying) return;
+
+        _customFixedUpdate.Update(Time.deltaTime);
 	}
 
-    public void Initialize(float tickrate, PartialPlayer[] players)
+    public void Initialize(PartialPlayer[] players)
     {
-        _tickrate = tickrate;
+        _tickrate = MatchInfoManager.Instance.Tickrate;
 
-        PlayersManager.Instance.CreatePlayers(players);
+        Debug.Log($"initializing playback manager {_tickrate}");
+
+        SetTimescale(1);
 
         IsInitialized = true;
     }
@@ -47,44 +55,10 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
         _isReady = true;
     }
 
-    public bool AddNadeFrame(DemoParser parser, WeaponFiredEventArgs eventArgs)
+    public void SetTimescale(float timescale)
     {
-        if (eventArgs.Weapon.Class != EquipmentClass.Grenade) return false;
-
-        var nadeThrow = new NadeThrow()
-        {
-            NadeType = eventArgs.Weapon.Weapon,
-            Thrower = eventArgs.Shooter.SteamID.ToString(),
-            Position = new Vector3(-eventArgs.Shooter.Position.X, eventArgs.Shooter.Position.Z, -eventArgs.Shooter.Position.Y),
-            Direction = DemoInfoHelper.ViewAnglesToVector3(eventArgs.Shooter.ViewDirectionX, eventArgs.Shooter.ViewDirectionY)
-        };
-
-        NadeThrowFrame frame = null;
-        if (NadeThrowFrames.Count != 0) frame = NadeThrowFrames.Last();
-        if (frame == null || frame.Tick != parser.CurrentTick)
-        {
-            frame = new NadeThrowFrame()
-            {
-                Tick = parser.CurrentTick,
-                Round = MatchInfoManager.Instance.Rounds.Last().Number,
-                NadeThrows = new List<NadeThrow>()
-                {
-                    nadeThrow
-                }
-            };
-            NadeThrowFrames.Add(frame);
-        }
-        else
-        {
-            frame.NadeThrows.Add(nadeThrow);
-        }
-
-        return true;
-    }
-
-    public void AddNadeProjectileFrame(NadeProjectileFrame frame)
-    {
-        NadeProjectileFrames.Add(frame);
+        TimeScale = timescale;
+        _customFixedUpdate = new CustomFixedUpdate((1 / _tickrate) / TimeScale, () => _framesToIterate++);
     }
 
     public void TogglePlayPause()
@@ -106,42 +80,61 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
     {
         if (!_isReady) return;
         var frames = Mathf.RoundToInt(seconds * _tickrate);
-        currentFrame = Mathf.Clamp(currentFrame + frames, 0, Frames.Count - 1);
-        if (!IsPlaying) PlayersManager.Instance.UpdatePlayers(Frames[currentFrame].Players);
+        CurrentFrame = Mathf.Clamp(CurrentFrame + frames, 0, Frames.Count - 1);
+        if (!IsPlaying) PlayersManager.Instance.UpdatePlayers(Frames[CurrentFrame].Players);
     }
 
     public void SkipToRound(int roundNumber)
     {
         var round = MatchInfoManager.Instance.Rounds.Find(r => r.Number == roundNumber);
-        GoToTick(round.StartTick);
-        if (!IsPlaying) PlayersManager.Instance.UpdatePlayers(Frames[currentFrame].Players);
+        GoToTick(round.StartTick + 1);
+
+        if (!IsPlaying) PlayersManager.Instance.UpdatePlayers(Frames[CurrentFrame].Players);
     }
 
     private void GoToTick(int tick)
     {
-        var currentTick = Frames[currentFrame].Tick;
+        var currentTick = Frames[CurrentFrame].Tick;
+
         var difference = tick - currentTick;
-        currentFrame = Mathf.Clamp(currentFrame + difference, 0, Frames.Count - 1);
+
+        CurrentFrame = Mathf.Clamp(CurrentFrame + difference, 0, Frames.Count - 1);
+
+        NadeGraphicsManager.Instance.ClearNadeTrails();
     }
 
     public IEnumerator IterateThroughFrames()
     {
         while (true)
         {
-            if (currentFrame >= Frames.Count - 2) yield return new WaitForSeconds(1 / _tickrate);
+            for (int i = 0; i < _framesToIterate; i++)
+            {
+                IterateFrame();
+            }
 
-            var frame = Frames[currentFrame];
+            _framesToIterate = 0;
 
-            PlayersManager.Instance.UpdatePlayers(frame.Players);
+            //if (CurrentFrame == 8000) Debug.Log($"1. tickrate: {_tickrate} | timescale {TimeScale} | wait for {(1 / _tickrate) * TimeScale}s | TIME {Time.time}");
+            //if (CurrentFrame == 8001) Debug.Log($"2. tickrate: {_tickrate} | timescale {TimeScale} | TIME {Time.time}");
 
-            AlignFrames(frame.Tick);
-
-            UpdateFrames(frame);
-
-            currentFrame++;
-
-            yield return new WaitForSeconds((1 / _tickrate) * TimeScale);
+            //yield return new WaitForSeconds((1 / _tickrate) * TimeScale);
+            yield return null;
         }
+    }
+
+    private void IterateFrame()
+    {
+        if (CurrentFrame >= Frames.Count - 2) return;
+
+        var frame = Frames[CurrentFrame];
+
+        PlayersManager.Instance.UpdatePlayers(frame.Players);
+
+        AlignFrames(frame.Tick);
+
+        UpdateFrames(frame);
+
+        CurrentFrame++;
     }
 
     private void UpdateFrames(Frame frame)
@@ -152,16 +145,23 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
             currentWeaponFrame++;
         }
 
-        if (frame.Tick == NadeThrowFrames[currentNadeFrame].Tick)
+        if (frame.Tick == NadePlaybackManager.Instance.NadeThrowFrames[currentNadeFrame].Tick)
         {
-            GraphicsManager.Instance.DisplayNadeFrame(NadeThrowFrames[currentNadeFrame]);
+            GraphicsManager.Instance.DisplayNadeFrame(NadePlaybackManager.Instance.NadeThrowFrames[currentNadeFrame]);
             currentNadeFrame++;
         }
+        
+        NadeGraphicsManager.Instance.UpdateNadeEffects(frame, NadePlaybackManager.Instance.NadeEffectFrames[currentNadeEffectFrame]);
+        if (frame.Tick == NadePlaybackManager.Instance.NadeEffectFrames[currentNadeEffectFrame].Tick) currentNadeEffectFrame++;
 
-        if (frame.Tick == NadeProjectileFrames[currentNadeProjectileFrame].Tick)
+        if (frame.Tick == NadePlaybackManager.Instance.NadeProjectileFrames[currentNadeProjectileFrame].Tick)
         {
-            GraphicsManager.Instance.UpdateNadeProjectileFrame(NadeProjectileFrames[currentNadeProjectileFrame]);
+            GraphicsManager.Instance.UpdateNadeProjectileFrame(NadePlaybackManager.Instance.NadeProjectileFrames[currentNadeProjectileFrame]);
             currentNadeProjectileFrame++;
+        }
+        else
+        {
+            NadeGraphicsManager.Instance.ClearNades();
         }
 
 
@@ -175,13 +175,20 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
     private void AlignFrames(int currentTick)
     {
         AlignFrame(currentTick, WeaponFiredFrames, ref currentWeaponFrame);
-        AlignFrame(currentTick, NadeThrowFrames, ref currentNadeFrame);
-        AlignFrame(currentTick, NadeProjectileFrames, ref currentNadeProjectileFrame);
+        AlignFrame(currentTick, NadePlaybackManager.Instance.NadeThrowFrames, ref currentNadeFrame);
+        AlignFrame(currentTick, NadePlaybackManager.Instance.NadeProjectileFrames, ref currentNadeProjectileFrame);
+        AlignFrame(currentTick, NadePlaybackManager.Instance.NadeEffectFrames, ref currentNadeEffectFrame);
         AlignFrame(currentTick, PlayerHurtFrames, ref currentPlayerHurtFrame);
     }
 
     private void AlignFrame<T>(int currentTick, List<T> frames, ref int currentFrameIndex) where T : IFrame
     {
+        if(currentFrameIndex >= frames.Count)
+        {
+            currentFrameIndex = frames.Count - 1;
+            return;
+        }
+
         var frame = frames[currentFrameIndex];
 
         while (frame.Tick > currentTick && currentFrameIndex > 0)
@@ -189,7 +196,7 @@ public class PlaybackManager : SingletonMonoBehaviour<PlaybackManager> {
             frame = frames[--currentFrameIndex];
         }
 
-        while (frame.Tick < currentTick)
+        while (currentFrameIndex != frames.Count - 1 && frame.Tick < currentTick)
         {
             frame = frames[++currentFrameIndex];
         }

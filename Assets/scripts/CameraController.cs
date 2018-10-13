@@ -6,7 +6,10 @@ public class CameraController : MonoBehaviour {
     private float _sensitivity = 4;
     private float _zoomSensitivity = 10;
 
+    private SpectateController _spectateController;
+
     private void Start () {
+        _spectateController = GetComponent<SpectateController>();
 	}
 
     private void Update()
@@ -15,6 +18,8 @@ public class CameraController : MonoBehaviour {
     }
 
     private void LateUpdate () {
+        if (_spectateController.SpectateMode != SpectateMode.Free) return;
+
         if(Input.GetMouseButton(2))
         {
             transform.RotateAround(_orbitTarget, Vector3.up, Input.GetAxisRaw("Mouse X") * _sensitivity);
@@ -23,10 +28,14 @@ public class CameraController : MonoBehaviour {
 
         HandleZoom();
 
+	}
+
+    private void FixedUpdate()
+    {
         HandleMove();
 
         transform.LookAt(_orbitTarget);
-	}
+    }
 
     private void HandleZoom()
     {

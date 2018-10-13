@@ -19,6 +19,10 @@ public class UIManager : SingletonMonoBehaviour<UIManager> {
 		
 	}
 
+    public void ResetSelf()
+    {
+    }
+
     public void StartParsing()
     {
         Canvas = GameObject.Find("Canvas");

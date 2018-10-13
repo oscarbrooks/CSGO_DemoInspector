@@ -57,6 +57,7 @@ GameObject:
   - component: {fileID: 224037434966335878}
   - component: {fileID: 222752790373785990}
   - component: {fileID: 114741101106888502}
+  - component: {fileID: 114024645169040276}
   m_Layer: 5
   m_Name: Progress
   m_TagString: Untagged
@@ -81,6 +82,21 @@ Animator:
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
+--- !u!114 &114024645169040276
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1913516857121750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7223d7a6820ee6c44864df26b2cbc9e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_color1: {r: 0.7266214, g: 0.63235295, b: 1, a: 1}
+  m_color2: {r: 0.56228375, g: 0.9558824, b: 0.9395956, a: 1}
+  m_angle: 0
+  m_ignoreRatio: 1
 --- !u!114 &114091553585614774
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -165,7 +181,7 @@ MonoBehaviour:
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
-  m_FillAmount: 0
+  m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 2
 --- !u!114 &114814943252955266
